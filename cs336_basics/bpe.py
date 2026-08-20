@@ -82,45 +82,53 @@ def train_bpe(
         for pre_token, count in pre_token_counts.items()
     }
 
-    # pairs_count = {}
-    # pairs_index = defaultdict(set)
+    pairs_count = {}
+    pairs_index = defaultdict(set)
     
-    # for pre_token, freq in frequency_table.items():
-    #     for i in range(len(pre_token)-1):
-    #         pair = tuple([pre_token[i], pre_token[i+1]])
-    #         pairs_count[pair] = pairs_count.get(pair, 0) + freq
-    #         pairs_index[pair].add(pre_token)
+    for pre_token, freq in frequency_table.items():
+        for i in range(len(pre_token)-1):
+            pair = tuple([pre_token[i], pre_token[i+1]])
+            pairs_count[pair] = pairs_count.get(pair, 0) + freq
+            pairs_index[pair].add(pre_token)
 
     while len(vocab) < vocab_size:
-    # for j in range(2):
-        # print(pairs)
-        pairs_count = {}
-        pairs_index = defaultdict(set)
 
-        for pre_token, freq in frequency_table.items():
-            for i in range(len(pre_token)-1):
-                pair = tuple([pre_token[i], pre_token[i+1]])
-                pairs_count[pair] = pairs_count.get(pair, 0) + freq
-                pairs_index[pair].add(pre_token)
-
-
+        if len(pairs_count) == 0:
+            return vocab
         best_pair, best_freq = max(pairs_count.items(), key=lambda item: (item[1], item[0]))
+
+
+        if best_freq == 0:
+            return vocab
         new_token = best_pair[0] + best_pair[1]
+        # print(new_token)
         vocab[len(vocab)] = new_token
         merges.append(best_pair)
 
-        affected_per_tokens = pairs_index[best_pair]
-        new_pre_tokens = []
-        freqs =[]
+        affected_per_tokens = pairs_index[best_pair].copy()
+        # print(affected_per_tokens)
+
+        new_pre_tokens = set()
+
+        # new_frequency_table = frequency_table.copy()
+
         for affected_token in affected_per_tokens:
             freq = frequency_table[affected_token]
+            # print(affected_token, freq)
             new_pre_token = []
-            old_pairs = {}
+
+            for i in range(len(affected_token)-1):
+                old_pair = (affected_token[i], affected_token[i+1])
+                pairs_count[old_pair] -= freq
+                if pairs_count[old_pair] == 0:
+                    del pairs_count[old_pair]
+                pairs_index[old_pair].discard(affected_token)
+                if len(pairs_index[old_pair]) == 0:
+                    del pairs_index[old_pair]
+
             i = 0
             while i < len(affected_token)-1:
                 old_pair = (affected_token[i], affected_token[i+1])
-                # old_pairs[old_pair] = old_pairs.get(old_pair, 0) + 1
-
                 if old_pair == best_pair:
                     new_pre_token.append(new_token)
                     i += 2
@@ -128,36 +136,33 @@ def train_bpe(
                     new_pre_token.append(affected_token[i])
                     i += 1
 
+
             if i == len(affected_token) - 1:
                 new_pre_token.append(affected_token[i])
+            new_pre_tokens.add(tuple(new_pre_token))
 
-            new_pre_tokens.append(tuple(new_pre_token))
-            freqs.append(freq)
-
-            # for old_pair, count in old_pairs.items():
-            #     pairs_count[old_pair] -= count * freq
-            #     pairs_index[old_pair].discard(affected_token)
+            frequency_table[tuple(new_pre_token)] = frequency_table.get(tuple(new_pre_token), 0) + freq
+            frequency_table[affected_token] -= freq
+            if frequency_table[affected_token] == 0:
+                del  frequency_table[affected_token]
 
 
-        for affected_token in affected_per_tokens:
-            frequency_table[affected_token] = 0
-        
+        for new_pre_token in new_pre_tokens:
+            for i in range(len(new_pre_token)-1):
+                new_pair = (new_pre_token[i], new_pre_token[i+1])
+                pairs_count[new_pair] = pairs_count.get(new_pair, 0) + frequency_table[new_pre_token] 
+                pairs_index[new_pair].add(new_pre_token)
 
-        for new_pre_token, freq in zip(new_pre_tokens, freqs):
-
-            # # print('---------new affected token')
-            # # print(new_affected_token)
-            # for i in range(len(new_pre_token)-1):
-            #     new_pair = tuple([new_pre_token[i], new_pre_token[i+1]])
-            #     pairs_count[new_pair] = pairs_count.get(new_pair, 0) + freq
-                
-            #     pairs_index[new_pair].add(new_pre_token)
-
-            frequency_table[new_pre_token] = frequency_table.get(new_pre_token, 0) + freq
-
-            
     # print(vocab)
+    # print(merges)
     return vocab, merges
+# input_path = "tests/fixtures/tinystories_sample.txt"
+# vocab, merges = train_bpe(
+#     input_path=input_path,
+#     vocab_size=300,
+#     special_tokens=["<|endoftext|>"],
+# )
+train_bpe(input_path='data/smallest.txt', vocab_size=300,special_tokens=['<|endoftext|>'])
 
 
 def train_bpe2(
@@ -265,7 +270,7 @@ def train_bpe2(
             new_freq_table[new_key] = new_freq_table.get(new_key, 0) + freq
 
         frequency_table = new_freq_table
-        # print(frequency_table)
+
     return vocab, merges
 
 # train_bpe(input_path='data/smallest.txt', vocab_size=300,special_tokens=['<|endoftext|>'])

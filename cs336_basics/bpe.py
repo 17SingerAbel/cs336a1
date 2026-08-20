@@ -10,7 +10,7 @@ from jaxtyping import Bool, Float, Int
 from torch import Tensor
 import regex as re
 
-# from pretokenization_example import find_chunk_boundaries
+from pretokenization_example import find_chunk_boundaries
 from collections import defaultdict
 
 
@@ -114,6 +114,7 @@ def train_bpe(
 
             new_pre_token = []
 
+            idx = 0
             for i in range(len(affected_token)-1):
                 old_pair = (affected_token[i], affected_token[i+1])
                 pairs_count[old_pair] -= freq
@@ -123,18 +124,16 @@ def train_bpe(
                 if len(pairs_index[old_pair]) == 0:
                     del pairs_index[old_pair]
 
-            i = 0
-            while i < len(affected_token)-1:
-                old_pair = (affected_token[i], affected_token[i+1])
                 if old_pair == best_pair:
                     new_pre_token.append(new_token)
-                    i += 2
+                    idx += 2
                 else:
-                    new_pre_token.append(affected_token[i])
-                    i += 1
+                    if idx == i:
+                        new_pre_token.append(affected_token[i])
+                        idx += 1
 
-            if i == len(affected_token) - 1:
-                new_pre_token.append(affected_token[i])
+            if idx == len(affected_token) - 1:
+                new_pre_token.append(affected_token[idx])
             new_pre_tokens.add(tuple(new_pre_token))
 
             frequency_table[tuple(new_pre_token)] = frequency_table.get(tuple(new_pre_token), 0) + freq

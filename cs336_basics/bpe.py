@@ -106,15 +106,12 @@ def train_bpe(
         merges.append(best_pair)
 
         affected_per_tokens = pairs_index[best_pair].copy()
-        # print(affected_per_tokens)
 
         new_pre_tokens = set()
 
-        # new_frequency_table = frequency_table.copy()
-
         for affected_token in affected_per_tokens:
             freq = frequency_table[affected_token]
-            # print(affected_token, freq)
+
             new_pre_token = []
 
             for i in range(len(affected_token)-1):
@@ -136,7 +133,6 @@ def train_bpe(
                     new_pre_token.append(affected_token[i])
                     i += 1
 
-
             if i == len(affected_token) - 1:
                 new_pre_token.append(affected_token[i])
             new_pre_tokens.add(tuple(new_pre_token))
@@ -156,13 +152,8 @@ def train_bpe(
     # print(vocab)
     # print(merges)
     return vocab, merges
-# input_path = "tests/fixtures/tinystories_sample.txt"
-# vocab, merges = train_bpe(
-#     input_path=input_path,
-#     vocab_size=300,
-#     special_tokens=["<|endoftext|>"],
-# )
-train_bpe(input_path='data/smallest.txt', vocab_size=300,special_tokens=['<|endoftext|>'])
+
+# train_bpe(input_path='data/smallest.txt', vocab_size=300,special_tokens=['<|endoftext|>'])
 
 
 def train_bpe2(

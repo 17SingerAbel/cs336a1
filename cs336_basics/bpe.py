@@ -150,34 +150,30 @@ def train_bpe(
             return vocab
         best_pair, best_freq = max(pairs_count.items(), key=lambda item: (item[1], item[0]))
 
-        if 6640 <= loop <= 6720:
-            print("\n==========")
-            print("loop:", loop)
-            # print("best pair:", best_pair)
-            print("best pair count:", pairs_count[best_pair])
+        # if 6640 <= loop <= 6720:
+        #     print("\n==========")
+        #     print("loop:", loop)
+        #     # print("best pair:", best_pair)
+        #     print("best pair count:", pairs_count[best_pair])
 
         if best_freq == 0:
             return vocab
         new_token = best_pair[0] + best_pair[1]
 
-        if len(new_token) > 5:
-            print("best freq:", best_freq)
-            print("best pair:", best_pair)
-
-            print("left token:", repr(best_pair[0]))
-            print("right token:", repr(best_pair[1]))
-
-            print("left len:", len(best_pair[0]))
-            print("right len:", len(best_pair[1]))
-            print("new token len:", len(new_token))
-            print("affected tokens", affected_per_tokens)
-
-            sys.exit(-1)
-
         vocab[len(vocab)] = new_token
         merges.append(best_pair)
 
         affected_per_tokens = pairs_index[best_pair].copy()
+        # if 6640 <= loop <= 6720:
+
+        if len(new_token) > 2000:
+            print("best freq:", best_freq)
+            print("left len:", len(best_pair[0]))
+            print("right len:", len(best_pair[1]))
+            print("new token len:", len(new_token))
+        #     # print(frequency_table)
+        #     print("affected tokens", affected_per_tokens)
+            sys.exit(-1)
 
         new_pre_tokens = set()
 
@@ -188,21 +184,24 @@ def train_bpe(
 
             idx = 0
             for i in range(len(affected_token)-1):
+        
                 old_pair = (affected_token[i], affected_token[i+1])
+                # print("freq:", freq)
+                # print('pairs_count num:', pairs_count[old_pair])
                 pairs_count[old_pair] -= freq
                 if pairs_count[old_pair] == 0 :
                     del pairs_count[old_pair]
                 pairs_index[old_pair].discard(affected_token)
                 if len(pairs_index[old_pair]) == 0:
                     del pairs_index[old_pair]
-
+                if idx != i:
+                    continue
                 if old_pair == best_pair:
                     new_pre_token.append(new_token)
                     idx += 2
                 else:
-                    if idx == i:
-                        new_pre_token.append(affected_token[i])
-                        idx += 1
+                    new_pre_token.append(affected_token[i])
+                    idx += 1
 
             if idx == len(affected_token) - 1:
                 new_pre_token.append(affected_token[idx])
@@ -212,25 +211,33 @@ def train_bpe(
             frequency_table[affected_token] -= freq
             if frequency_table[affected_token] == 0:
                 del  frequency_table[affected_token]
-
-        if 6640 <= loop <= 6720:
-            print("--- after create/cleanup ---")
-            print("new token length:", len(new_token))
+        # print('pairs_count', pairs_count)
+        # if 6640 <= loop <= 6720:
+        #     print("--- after create/cleanup ---")
+        #     print("new token length:", len(new_token))
         print_memory(f"after {loop}th loop, after create new pre-token and clean up old pre-token")
 
         for new_pre_token in new_pre_tokens:
-            for i in range(len(new_pre_token)-1):
-                new_pair = (new_pre_token[i], new_pre_token[i+1])
+            # print(len(new_pre_token))
+            j = 0
+            while j < len(new_pre_token)-1:
+                new_pair = (new_pre_token[j], new_pre_token[j+1])
+                # print("new_pair:", new_pair)
                 pairs_count[new_pair] = pairs_count.get(new_pair, 0) + frequency_table[new_pre_token] 
+                # print("new pair counts:", pairs_count[new_pair])
                 pairs_index[new_pair].add(new_pre_token)
+                # if new_pair == best_pair:
+                j += 1
+        # print('pairs_count', pairs_count)
+        # if len(new_token) > 2:
+        #     sys.exit(-1)
+        # if 6640 <= loop <= 6720:
+        #     print(f"\n--- loop {loop} ---")
 
-        if 6640 <= loop <= 6720:
-            print(f"\n--- loop {loop} ---")
-
-            print("pair_counts:", len(pairs_count))
-            print("pair_index:", len(pairs_index))
-            print("vocab:", len(vocab))
-            print("merges:", len(merges))
+        #     print("pair_counts:", len(pairs_count))
+        #     print("pair_index:", len(pairs_index))
+        #     print("vocab:", len(vocab))
+        #     print("merges:", len(merges))
         print_memory(f"after {loop}th loop, after update pair counts and pair index")
         loop += 1
     elapsed = time.perf_counter() - start

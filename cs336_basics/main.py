@@ -10,8 +10,14 @@ import json
 # print(len(dic[0]))
 # print(len(dic[1]))
 start = time.perf_counter()
-vocab, merges = train_bpe(input_path='data/TinyStoriesV2-GPT4-train.txt', vocab_size=10000,special_tokens=['<|endoftext|>'])
-# vocab, merges = train_bpe(input_path='data/smallest.txt', vocab_size=300,special_tokens=['<|endoftext|>'])
+# vocab, merges = train_bpe(input_path='data/owt_train.txt', vocab_size=32000,special_tokens=['<|endoftext|>'])
+
+# input_filepath = 'TinyStoriesV2-GPT4-train.txt'
+input_filepath = 'owt_train.txt'
+input_file_prefix =  input_filepath.split('.')[0]
+print(input_file_prefix)
+
+vocab, merges = train_bpe(input_path=f'data/{input_file_prefix}.txt', vocab_size=3000,special_tokens=['<|endoftext|>'])
 
 elapsed = time.perf_counter() - start
 print(f"BPE Training total time: {elapsed:.2f} seconds")
@@ -25,5 +31,13 @@ readable_vocab = {
     for key, value in vocab.items()
 }
 
-with open("TinyStories-vocab.json", "w") as f:
+with open(f"output/{input_file_prefix}-vocab.json", "w") as f:
     json.dump(readable_vocab, f, indent=2)
+
+readable_merges = [
+    [repr(pairs[0]), repr(pairs[1])]
+    for pairs in merges
+]
+
+with open(f"output/{input_file_prefix}-merges.json", "w") as f:
+    json.dump(readable_merges, f, indent=2)

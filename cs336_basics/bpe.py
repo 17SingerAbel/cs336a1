@@ -111,8 +111,6 @@ def train_bpe(
         vocab[len(vocab)] = sepcial_token.encode('utf-8')
 
     # 1. Build tasks
-
-    
     tasks = []
     with open(input_path, "rb") as f:
         num_chuncks = 40
@@ -165,19 +163,24 @@ def train_bpe(
 
     print_memory("after BPE initialization")
 
+    
+    num_old_pair_updates = 0
+    num_new_pair_updates = 0
+    num_merged_occurrences = 0
+    num_affected_token = 0
+
+    total_find_max_time = 0
+    total_merge_time = 0
+
     loop = 0
     loop_100_start_time = time.perf_counter()
     while len(vocab) < vocab_size:
         
         if len(pairs_count) == 0:
             return vocab, merges
+        t0 = time.perf_counter()
         best_pair, best_freq = max(pairs_count.items(), key=lambda item: (item[1], item[0]))
-
-        # if 6640 <= loop <= 6720:
-        #     print("\n==========")
-        #     print("loop:", loop)
-        #     # print("best pair:", best_pair)
-        #     print("best pair count:", pairs_count[best_pair])
+        total_find_max_time += time.perf_counter() - t0
 
         if best_freq == 0:
             return vocab
@@ -194,13 +197,15 @@ def train_bpe(
             print("left len:", len(best_pair[0]))
             print("right len:", len(best_pair[1]))
             print("new token len:", len(new_token))
-        #     # print(frequency_table)
-        #     print("affected tokens", affected_per_tokens)
+
             sys.exit(-1)
 
         new_pre_tokens = set()
 
+        t0 = time.perf_counter()
         for affected_token in affected_per_tokens:
+            # sum_affect_token_len += len(affected_token)
+            num_affected_token += 1
             freq = frequency_table[affected_token]
 
             new_pre_token = []
@@ -209,12 +214,17 @@ def train_bpe(
             for i in range(len(affected_token)-1):
         
                 old_pair = (affected_token[i], affected_token[i+1])
-                # print("freq:", freq)
-                # print('pairs_count num:', pairs_count[old_pair])
+   
                 pairs_count[old_pair] -= freq
+                num_old_pair_updates += 1
+
+
                 if pairs_count[old_pair] == 0 :
                     del pairs_count[old_pair]
                 pairs_index[old_pair].discard(affected_token)
+
+                # sum_pair_count_change += 1
+
                 if len(pairs_index[old_pair]) == 0:
                     del pairs_index[old_pair]
                 if idx != i:
@@ -222,6 +232,8 @@ def train_bpe(
                 if old_pair == best_pair:
                     new_pre_token.append(new_token)
                     idx += 2
+
+                    num_merged_occurrences += 1
                 else:
                     new_pre_token.append(affected_token[i])
                     idx += 1
@@ -234,34 +246,23 @@ def train_bpe(
             frequency_table[affected_token] -= freq
             if frequency_table[affected_token] == 0:
                 del  frequency_table[affected_token]
-        # print('pairs_count', pairs_count)
-        # if 6640 <= loop <= 6720:
-        #     print("--- after create/cleanup ---")
-        #     print("new token length:", len(new_token))
-        # print_memory(f"after {loop}th loop, after create new pre-token and clean up old pre-token")
 
         for new_pre_token in new_pre_tokens:
-            # print(len(new_pre_token))
+
             j = 0
             while j < len(new_pre_token)-1:
                 new_pair = (new_pre_token[j], new_pre_token[j+1])
                 # print("new_pair:", new_pair)
                 pairs_count[new_pair] = pairs_count.get(new_pair, 0) + frequency_table[new_pre_token] 
+
+                num_new_pair_updates += 1
                 # print("new pair counts:", pairs_count[new_pair])
                 pairs_index[new_pair].add(new_pre_token)
                 # if new_pair == best_pair:
                 j += 1
-        # print('pairs_count', pairs_count)
-        # if len(new_token) > 2:
-        #     sys.exit(-1)
-        # if 6640 <= loop <= 6720:
-        #     print(f"\n--- loop {loop} ---")
 
-        #     print("pair_counts:", len(pairs_count))
-        #     print("pair_index:", len(pairs_index))
-        #     print("vocab:", len(vocab))
-        #     print("merges:", len(merges))
-        # print_memory(f"after {loop}th loop, after update pair counts and pair index")
+        total_merge_time += time.perf_counter() - t0
+
         if loop % 1000 == 0:
             print(f'========= loop {loop} is done =========')
             print_memory(f"at{loop}th loop,")
@@ -269,9 +270,14 @@ def train_bpe(
             loop_100_start_time = time.perf_counter()
         loop += 1
     elapsed = time.perf_counter() - start
-    
+    print('======== summary ========')
+    print(f"BPE Pre-tokenization time: {elapsed:.2f} seconds")
     print(f"BPE Merge BPE time: {elapsed:.2f} seconds")
+    print('========= detail =========')
+    print(f"BPE Find Max total time: {total_find_max_time:.2f} seconds")
+    print(f"BPE Merge total time: {total_merge_time:.2f} seconds")
+    total_pair_updates = num_old_pair_updates + num_new_pair_updates
+    print(f"averge total pair update per affected pre-token:, { total_pair_updates / num_affected_token:2f}")
+    print(f"avg merges per affected pre-token:, {num_merged_occurrences/num_affected_token: 2f}" )
     return vocab, merges
-
-# train_bpe(input_path='data/smallest.txt', vocab_size=300,special_tokens=['<|endoftext|>'])
 

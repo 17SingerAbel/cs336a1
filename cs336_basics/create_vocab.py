@@ -46,10 +46,7 @@ print(f"BPE Training total time: {elapsed:.2f} seconds")
 
 
 readable_vocab_heap = {
-    str(key): {
-        "bytes": repr(value),
-        "text": value.decode("utf-8", errors="replace")
-    }
+    str(key):repr(value)
     for key, value in vocab_heap.items()
 }
 

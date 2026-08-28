@@ -17,7 +17,7 @@ class Embedding(nn.Module):
                 embedding_dim,
                 device=device,
                 dtype=dtype,
-            )
+            ), requires_grad=True
         )
 
         std = math.sqrt(2 / (num_embeddings + embedding_dim))

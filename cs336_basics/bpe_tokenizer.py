@@ -50,34 +50,42 @@ class BpeTokenizer:
         with open(vocab_filepath, encoding="utf-8") as f:
             raw_vocab = json.load(f)
 
+        for key, value in raw_vocab.items():
+            if not str(key).isdigit():
+                print("Invalid key:", repr(key), "value:", repr(value))
+                break
+        vocab = {
+            int(token_id): ast.literal_eval(token)
+                for token_id, token in raw_vocab.items()
+        }
+        # print(vocab)
+
+        with open(merges_filepath, encoding='utf-8') as f:
+            raw_merges = json.load(f)
+
+        merges = [
+            (ast.literal_eval(left), ast.literal_eval(right)) for left, right in raw_merges
+        ]
+
+        # # for unit test
         # vocab = {
-        #     int(token_id): ast.literal_eval(token_object)
-        #         for token_id, token_object in raw_vocab.items()
+        #     int(token_id): token_object.encode('utf-8')
+        #         for token_object, token_id in raw_vocab.items()
         # }
 
-        vocab = {
-            int(token_id): token_object.encode('utf-8')
-                for token_object, token_id in raw_vocab.items()
-        }
-        # with open(merges_filepath, encoding='utf-8') as f:
-        #     raw_merges = json.load(f)
+        # merges = []
 
-        # merges = [
-        #     (ast.literal_eval(left), ast.literal_eval(right)) for left, right in raw_merges
-        # ]
-        merges = []
+        # with open(merges_filepath, encoding="utf-8") as file:
+        #     for line in file:
+        #         line = line.strip()
+        #         if not line or line.startswith("#"):
+        #             continue
 
-        with open(merges_filepath, encoding="utf-8") as file:
-            for line in file:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-
-                left, right = line.split()
-                # print(left, right)
-                # print((left.encode('utf-8'), right.encode('utf-8')))
-                # sys.exit(-1)
-                merges.append((left.encode('utf-8'), right.encode('utf-8')))
+        #         left, right = line.split()
+        #         # print(left, right)
+        #         # print((left.encode('utf-8'), right.encode('utf-8')))
+        #         # sys.exit(-1)
+        #         merges.append((left.encode('utf-8'), right.encode('utf-8')))
         # print(merges)
         return cls(vocab=vocab, merges=merges,special_tokens=special_tokens)
 
@@ -152,6 +160,9 @@ class BpeTokenizer:
         for chunk in iterable:
             yield from self.encode(chunk)
 
+    def count_iterable_tokens(self, iterable: Iterable[str]) -> int:
+        return sum(1 for _ in self.encode_iterable(iterable))
+    
     def decode(self, ids: list[int]) -> str:
         byte_text = b"".join(
             self.vocab[token_id]
@@ -159,14 +170,20 @@ class BpeTokenizer:
         )
         return byte_text.decode("utf-8", errors="replace")
 
-# merges_filepath = 'output/TinyStoriesV2-GPT4-valid-heap-merges.json'
-# vocab_filepath = 'output/TinyStoriesV2-GPT4-valid-heap-vocab.json'
+merges_filepath = 'output/TinyStoriesV2-GPT4-valid-heap-merges.json'
+vocab_filepath = 'output/TinyStoriesV2-GPT4-valid-heap-vocab.json'
 
-# tokenizer = BpeTokenizer.from_files(VOCAB_PATH, MERGES_PATH, ['<|endoftext|>'])
+tokenizer = BpeTokenizer.from_files(vocab_filepath, merges_filepath, ['<|endoftext|>'])
 
-# # print(tokenizer.encode('hello <|endoftext|> hel <|endoftext|> world'))
-# # print(tokenizer.decode([5518, 32, 256, 430, 32, 256, 1592]))
+# print(tokenizer.encode('hello <|endoftext|> hel <|endoftext|> world'))
+# print(tokenizer.decode([5518, 32, 256, 430, 32, 256, 1592]))
 
-# print(tokenizer.encode('s'))
-# print(tokenizer.decode([82]))
- 
+with open('data/owt_valid.txt', 'r', encoding='utf-8') as f:
+    text = f.read()
+
+num_bytes = len(text.encode("utf-8"))
+token_count = sum(1 for _ in tokenizer.encode(text))
+
+print("bytes count:", num_bytes)
+print("token amount:", token_count)
+print("bytes/token:", num_bytes / token_count)

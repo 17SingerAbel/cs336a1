@@ -33,8 +33,8 @@ class Linear(nn.Module):
             self.weight,
             mean=0.0,
             std=std,
-            a=-3 * std,
-            b=3 * std,
+            a=-3*std,
+            b=3*std,
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

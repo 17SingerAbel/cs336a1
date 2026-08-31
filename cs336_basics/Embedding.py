@@ -20,7 +20,7 @@ class Embedding(nn.Module):
             ), requires_grad=True
         )
 
-        std = math.sqrt(2 / (num_embeddings + embedding_dim))
+        std = 1
 
         nn.init.trunc_normal_(
             self.embedding_matrix,

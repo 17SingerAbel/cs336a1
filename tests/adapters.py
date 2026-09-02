@@ -18,7 +18,6 @@ from cs336_basics.SwiGLU import SwiGlu
 from cs336_basics.RoPE import RoPE
 from einops import reduce, rearrange, einsum
 
-
 def run_linear(
     d_in: int,
     d_out: int,
@@ -455,7 +454,8 @@ def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, "
         Float[Tensor, "..."]: Tensor of with the same shape as `in_features` with the output of
         softmax normalizing the specified `dim`.
     """
-    raise NotImplementedError
+    max_entity = torch.amax(in_features, dim=dim, keepdim=True)
+    return torch.exp(in_features - max_entity) / torch.sum(torch.exp(in_features - max_entity), dim=dim, keepdim=True)
 
 
 def run_cross_entropy(

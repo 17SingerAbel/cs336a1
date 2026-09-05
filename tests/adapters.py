@@ -16,6 +16,8 @@ from cs336_basics.Embedding import Embedding
 from cs336_basics.RMSNorm import RMSNorm
 from cs336_basics.SwiGLU import SwiGlu
 from cs336_basics.RoPE import RoPE
+from cs336_basics.MultiHeadSelfAttention import MultiHeadSelfAttention
+# from cs336_basics.TransformerBlock import TransformerBlock
 from einops import reduce, rearrange, einsum
 
 def run_linear(
@@ -121,8 +123,13 @@ def run_scaled_dot_product_attention(
     Returns:
         Float[Tensor, " ... queries d_v"]: Output of SDPA
     """
-    raise NotImplementedError
-
+    # attention = softmax(Q @ K.T / sqrt(d)) @ V
+    d_k = Q.shape[-1]
+    base_score = einsum(Q, K, '... queries d_k, ... keys d_k -> ... queries keys')
+    attention_weights = base_score / (d_k ** 0.5)
+    if mask is not None:
+        attention_weights += torch.where(mask, 0, -torch.inf)
+    return run_softmax(attention_weights, -1) @ V
 
 def run_multihead_self_attention(
     d_model: int,
@@ -155,8 +162,8 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_model"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
-
+    multihead = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight)
+    return multihead.forward(in_features)
 
 def run_multihead_self_attention_with_rope(
     d_model: int,
@@ -195,7 +202,8 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_model"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    multihead = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, theta=theta, token_positions=token_positions, max_seq_len=max_seq_len)
+    return multihead.forward(in_features)
 
 
 def run_rope(
@@ -293,6 +301,9 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
+    # seq_len = in_features.shape[-2]
+    # transformer_block = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, weights, seq_len)
+    # return transformer_block.forward(in_features)
     raise NotImplementedError
 
 

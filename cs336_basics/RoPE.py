@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from einops import einsum
+from einops import einsum, rearrange
 
 
 class RoPE(nn.Module):
@@ -22,6 +22,10 @@ class RoPE(nn.Module):
 
         cos = self.cos_cached[token_positions]  # [..., sequence, d_k/2]
         sin = self.sin_cached[token_positions]  # [..., sequence, d_k/2]
+
+        if x.ndim == cos.ndim + 1:
+            cos = cos.unsqueeze(-3)
+            sin = sin.unsqueeze(-3)
 
         x_even = x[..., 0::2]  #[..., seq, d_k/2]
         x_odd = x[..., 1::2]

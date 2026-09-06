@@ -6,11 +6,10 @@ from cs336_basics.SwiGLU import SwiGlu
 
 class TransformerBlock(nn.Module):
 
-    def __init__(self, d_model, num_heads, d_ff, max_seq_len, theta, weights, seq_len):
+    def __init__(self, d_model, num_heads, d_ff, max_seq_len, theta, weights):
         super().__init__()
 
         self.rmsNorm_1 = RMSNorm(d_model, weights=weights['ln1.weight'])
-        token_positions = torch.arange(seq_len)
 
         self.multihead = MultiHeadSelfAttention(
             d_model, num_heads, 
@@ -18,7 +17,7 @@ class TransformerBlock(nn.Module):
             weights['attn.k_proj.weight'], 
             weights['attn.v_proj.weight'], 
             weights['attn.output_proj.weight'], 
-            theta=theta, token_positions=token_positions, 
+            theta=theta,
             max_seq_len=max_seq_len)
         
         self.rmsNorm_2 = RMSNorm(d_model, weights=weights['ln2.weight'])
@@ -27,9 +26,10 @@ class TransformerBlock(nn.Module):
         self.swiglu.w2_weight = nn.Parameter(weights['ffn.w2.weight'], requires_grad=True)
         self.swiglu.w3_weight = nn.Parameter(weights['ffn.w3.weight'], requires_grad=True)
 
-    def forward(self, x):
+    def forward(self, x, seq_len):
+        token_positions = torch.arange(seq_len)
         normalized_x = self.rmsNorm_1.forward(x)
-        residual_attention = x + self.multihead.forward(normalized_x)
+        residual_attention = x + self.multihead.forward(normalized_x, token_positions)
 
         normalized_attention = self.rmsNorm_2.forward(residual_attention)
         ffn_output = self.swiglu.forward(normalized_attention)

@@ -202,8 +202,8 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_model"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    multihead = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, theta=theta, token_positions=token_positions, max_seq_len=max_seq_len)
-    return multihead.forward(in_features)
+    multihead = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, theta=theta, max_seq_len=max_seq_len)
+    return multihead.forward(in_features, token_positions)
 
 
 def run_rope(
@@ -302,8 +302,8 @@ def run_transformer_block(
         running the Transformer block on the input features while using RoPE.
     """
     seq_len = in_features.shape[-2]
-    transformer_block = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, weights, seq_len)
-    return transformer_block.forward(in_features)
+    transformer_block = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, weights)
+    return transformer_block.forward(in_features, seq_len)
     # raise NotImplementedError
 
 

@@ -6,7 +6,7 @@ from cs336_basics.RoPE import RoPE
 
 class MultiHeadSelfAttention(nn.Module):
     
-    def __init__(self, d_model, num_heads,q_proj, k_proj, v_proj, w_o, theta=None, token_positions=None, max_seq_len=None):
+    def __init__(self, d_model, num_heads,q_proj, k_proj, v_proj, w_o, theta=None, max_seq_len=None):
         super().__init__()
         self.num_heads = num_heads
         self.d_head = d_model // num_heads
@@ -15,11 +15,10 @@ class MultiHeadSelfAttention(nn.Module):
         self.v_proj = nn.Parameter(v_proj, requires_grad = True)
         self.w_o = nn.Parameter(w_o, requires_grad = True)
         self.theta = theta
-        self.token_positions = token_positions
         self.max_seq_len = max_seq_len
     
         
-    def forward(self, x):
+    def forward(self, x, token_positions):
         
     
         Q = einsum(x, self.q_proj, '... seq d_in, d_out d_in -> ... seq d_out')
@@ -35,8 +34,8 @@ class MultiHeadSelfAttention(nn.Module):
         # # apply RoPe
         if self.theta is not None:
             rope = RoPE(self.theta, self.d_head, self.max_seq_len)
-            Q = rope.forward(Q, self.token_positions)
-            K = rope.forward(K, self.token_positions)
+            Q = rope.forward(Q, token_positions)
+            K = rope.forward(K, token_positions)
 
         multiHeadScores = einsum(Q, K, '... h queries d_out, ... h keys d_out -> ... h queries keys') / (self.d_head ** 0.5)
 

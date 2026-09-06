@@ -17,7 +17,7 @@ from cs336_basics.RMSNorm import RMSNorm
 from cs336_basics.SwiGLU import SwiGlu
 from cs336_basics.RoPE import RoPE
 from cs336_basics.MultiHeadSelfAttention import MultiHeadSelfAttention
-# from cs336_basics.TransformerBlock import TransformerBlock
+from cs336_basics.TransformerBlock import TransformerBlock
 from einops import reduce, rearrange, einsum
 
 def run_linear(
@@ -288,7 +288,7 @@ def run_transformer_block(
                 Weight of the second linear transformation in the FFN.
                 Shape is (d_model, d_ff).
             - `ffn.w3.weight`
-                Weight of the third linear transformation in the FFN.
+                Weight of    the third linear transformation in the FFN.
                 Shape is (d_ff, d_model).
             - `ln2.weight`
                 Weights of affine transform for the second RMSNorm
@@ -301,10 +301,10 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    # seq_len = in_features.shape[-2]
-    # transformer_block = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, weights, seq_len)
-    # return transformer_block.forward(in_features)
-    raise NotImplementedError
+    seq_len = in_features.shape[-2]
+    transformer_block = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, weights, seq_len)
+    return transformer_block.forward(in_features)
+    # raise NotImplementedError
 
 
 def run_transformer_lm(
@@ -409,8 +409,8 @@ def run_rmsnorm(
         Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
         RMSNorm of the `in_features`.
     """
-    rmsNorm = RMSNorm(d_model=d_model, eps=eps)
-    rmsNorm.weights = nn.Parameter(weights, requires_grad=True)
+    rmsNorm = RMSNorm(d_model=d_model, eps=eps, weights=weights)
+    # rmsNorm.weights = nn.Parameter(weights, requires_grad=True)
     return rmsNorm.forward(in_features)
     # raise NotImplementedError
 

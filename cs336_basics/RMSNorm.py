@@ -5,19 +5,22 @@ from einops import  einsum, reduce
 
 class RMSNorm(nn.Module):
 
-    def __init__(self, d_model: int, eps: float=1e-5, device=None, dtype=None):
+    def __init__(self, d_model: int, eps: float=1e-5, weights=None, device=None, dtype=None):
         super().__init__()
         self.d_model = d_model
         self.eps = eps
 
-        self.weights = nn.Parameter(
-            torch.ones(
-                d_model,
-                device=device,
-                dtype=dtype,
-            ),
-            requires_grad=True
-        )
+        if weights is None:
+            self.weights = nn.Parameter(
+                torch.ones(
+                    d_model,
+                    device=device,
+                    dtype=dtype,
+                ),
+                requires_grad=True
+            )
+        else:
+            self.weights = nn.Parameter(weights, requires_grad=True)
 
     def forward(self, x: Tensor) -> Tensor:
         in_dtype = x.dtype

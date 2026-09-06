@@ -18,6 +18,7 @@ from cs336_basics.SwiGLU import SwiGlu
 from cs336_basics.RoPE import RoPE
 from cs336_basics.MultiHeadSelfAttention import MultiHeadSelfAttention
 from cs336_basics.TransformerBlock import TransformerBlock
+from cs336_basics.LanguageModel import LanguageModel
 from einops import reduce, rearrange, einsum
 
 def run_linear(
@@ -386,7 +387,9 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    seq_len = in_indices.shape[-1]
+    lm = LanguageModel(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, weights)
+    return lm.forward(in_indices, seq_len)
 
 
 def run_rmsnorm(

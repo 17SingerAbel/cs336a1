@@ -21,6 +21,7 @@ from cs336_basics.TransformerBlock import TransformerBlock
 from cs336_basics.LanguageModel import LanguageModel
 from cs336_basics.AdamW import AdamW
 from einops import reduce, rearrange, einsum
+import math
 
 def run_linear(
     d_in: int,
@@ -506,7 +507,18 @@ def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm:
 
     The gradients of the parameters (parameter.grad) should be modified in-place.
     """
-    raise NotImplementedError
+    total = 0
+    parameters = list(parameters)
+    for p in parameters:
+        if p.grad is not None:
+            total += torch.sum(p.grad ** 2)
+
+    global_norm = total ** 0.5
+
+    if global_norm >= max_l2_norm:
+        scale = max_l2_norm / (global_norm + 1e-6)
+        for p in parameters:
+            p.grad = p.grad.mul_(scale)
 
 
 def get_adamw_cls() -> Any:
@@ -541,7 +553,13 @@ def run_get_lr_cosine_schedule(
     Returns:
         Learning rate at the given iteration under the specified schedule.
     """
-    raise NotImplementedError
+    if it < warmup_iters:
+        lr = it / warmup_iters * max_learning_rate
+    elif it < cosine_cycle_iters:
+        lr = min_learning_rate + 0.5 * (1 + math.cos(((it - warmup_iters) / (cosine_cycle_iters - warmup_iters)) * math.pi)) * (max_learning_rate - min_learning_rate)
+    else:
+        lr = min_learning_rate
+    return lr
 
 
 def run_save_checkpoint(

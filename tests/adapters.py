@@ -68,7 +68,7 @@ def run_embedding(
     embedding = Embedding(vocab_size, d_model)
     embedding.embedding_matrix = nn.Parameter(weights, requires_grad=True)
     return embedding.forward(token_ids)
-    # raise NotImplementedError
+
 
 
 def run_swiglu(
@@ -106,8 +106,6 @@ def run_swiglu(
     swiglu.w3_weight = nn.Parameter(w3_weight, requires_grad=True)
 
     return swiglu.forward(in_features)
-    
-    # raise NotImplementedError
 
 
 def run_scaled_dot_product_attention(
@@ -233,8 +231,6 @@ def run_rope(
     rope = RoPE(theta, d_k, max_seq_len, device=None)
     return rope.forward(in_query_or_key, token_positions)
 
-    # raise NotImplementedError
-
 
 def run_transformer_block(
     d_model: int,
@@ -309,7 +305,7 @@ def run_transformer_block(
     seq_len = in_features.shape[-2]
     transformer_block = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, weights)
     return transformer_block.forward(in_features, seq_len)
-    # raise NotImplementedError
+
 
 
 def run_transformer_lm(
@@ -417,9 +413,7 @@ def run_rmsnorm(
         RMSNorm of the `in_features`.
     """
     rmsNorm = RMSNorm(d_model=d_model, eps=eps, weights=weights)
-    # rmsNorm.weights = nn.Parameter(weights, requires_grad=True)
     return rmsNorm.forward(in_features)
-    # raise NotImplementedError
 
 
 def run_silu(in_features: Float[Tensor, " ..."]) -> Float[Tensor, " ..."]:
@@ -504,7 +498,6 @@ def run_cross_entropy(
     Returns:
         Float[Tensor, ""]: The average cross-entropy loss across examples.
     """
-    # raise NotImplementedError
     max_entity = torch.amax(inputs, dim=-1, keepdim=True)
     batch_idx = torch.arange(inputs.shape[0])
     correct_logits = inputs[batch_idx, targets].unsqueeze(-1)
@@ -593,7 +586,13 @@ def run_save_checkpoint(
             we've completed.
         out (str | os.PathLike | BinaryIO | IO[bytes]): Path or file-like object to serialize the model, optimizer, and iteration to.
     """
-    raise NotImplementedError
+    checkpoint = {
+        'model': model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'iteration': iteration
+    }
+    torch.save(checkpoint, out)
+
 
 
 def run_load_checkpoint(
@@ -614,8 +613,10 @@ def run_load_checkpoint(
     Returns:
         int: the previously-serialized number of iterations.
     """
-    raise NotImplementedError
-
+    checkpoint = torch.load(src)
+    model.load_state_dict(checkpoint['model'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    return checkpoint['iteration']
 
 def get_tokenizer(
     vocab: dict[int, bytes],

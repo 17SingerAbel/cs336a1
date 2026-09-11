@@ -22,6 +22,8 @@ from cs336_basics.LanguageModel import LanguageModel
 from cs336_basics.AdamW import AdamW
 from einops import reduce, rearrange, einsum
 import math
+import numpy as np
+
 
 def run_linear(
     d_in: int,
@@ -454,7 +456,20 @@ def run_get_batch(
         is the sampled input sequences, and the second tuple item is the corresponding
         language modeling labels.
     """
-    raise NotImplementedError
+    N = len(dataset)
+    starts = np.random.randint(
+        0,
+        N - context_length,
+        size=batch_size
+    )
+
+    batch_data = starts.reshape(-1, 1)
+    batch_data = batch_data + np.arange(context_length)
+
+    input_data = torch.LongTensor(batch_data)
+    label = input_data + 1
+
+    return input_data, label
 
 
 def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, " ..."]:

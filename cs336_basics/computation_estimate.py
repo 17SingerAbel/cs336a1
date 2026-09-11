@@ -58,4 +58,33 @@ norm_activation = batch_size * context_length * d_model
 
 QKV_proj_activation = batch_size * context_length * d_model
 
-QK_activation = batch_size * d_model * num_heads * context_length * context_length
+QK_activation = batch_size * num_heads * context_length * context_length
+
+# softmax_activation = 
+
+
+
+
+import os
+from collections.abc import Iterable
+from typing import IO, Any, BinaryIO
+
+import numpy.typing as npt
+import torch
+from jaxtyping import Bool, Float, Int
+from torch import Tensor
+# from cs336_basics.bpe import train_bpe, train_bpe_heap
+# from cs336_basics.bpe_tokenizer import BpeTokenizer
+# from cs336_basics.Linear import Linear
+# import torch.nn as nn
+# from cs336_basics.Embedding import Embedding
+# from cs336_basics.RMSNorm import RMSNorm
+# from cs336_basics.SwiGLU import SwiGlu
+# from cs336_basics.RoPE import RoPE
+# from cs336_basics.MultiHeadSelfAttention import MultiHeadSelfAttention
+# from cs336_basics.TransformerBlock import TransformerBlock
+# from cs336_basics.LanguageModel import LanguageModel
+# from cs336_basics.AdamW import AdamW
+from einops import reduce, rearrange, einsum
+import math
+import numpy as np

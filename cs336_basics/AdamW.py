@@ -48,7 +48,6 @@ class AdamW(torch.optim.Optimizer):
                 state["t"] = t + 1
                 state['m'] = new_m
                 state['v'] = new_v
-        return loss
 
 # for lr in [1e1, 1e2, 1e3]:
 #     print("lr: ", lr)

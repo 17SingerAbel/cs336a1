@@ -19,6 +19,7 @@ from cs336_basics.RoPE import RoPE
 from cs336_basics.MultiHeadSelfAttention import MultiHeadSelfAttention
 from cs336_basics.TransformerBlock import TransformerBlock
 from cs336_basics.LanguageModel import LanguageModel
+from cs336_basics.AdamW import AdamW
 from einops import reduce, rearrange, einsum
 
 def run_linear(
@@ -512,7 +513,7 @@ def get_adamw_cls() -> Any:
     """
     Returns a torch.optim.Optimizer that implements AdamW.
     """
-    raise NotImplementedError
+    return AdamW
 
 
 def run_get_lr_cosine_schedule(

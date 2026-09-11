@@ -52,4 +52,10 @@ print('transformer flop ration: ', (flops_per_layers * num_layers) / total_flops
 print('swiglu per transformer block: ', (swiglu) / flops_per_layers * 100)
 print('multi head flop ration: ', (multi_heads_flops ) / flops_per_layers * 100)
 
+batch_size = 64
 
+norm_activation = batch_size * context_length * d_model
+
+QKV_proj_activation = batch_size * context_length * d_model
+
+QK_activation = batch_size * d_model * num_heads * context_length * context_length

@@ -20,7 +20,7 @@ from cs336_basics.MultiHeadSelfAttention import MultiHeadSelfAttention
 from cs336_basics.TransformerBlock import TransformerBlock
 from cs336_basics.LanguageModel import LanguageModel
 from cs336_basics.AdamW import AdamW
-from einops import reduce, rearrange, einsum
+from einops import einsum
 import math
 import numpy as np
 

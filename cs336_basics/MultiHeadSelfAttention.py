@@ -2,18 +2,64 @@ import torch
 import torch.nn as nn
 from einops import rearrange, einsum
 from cs336_basics.RoPE import RoPE
-
+import math
 
 class MultiHeadSelfAttention(nn.Module):
     
-    def __init__(self, d_model, num_heads,q_proj, k_proj, v_proj, w_o, theta=None, max_seq_len=None):
+    def __init__(self, d_model, num_heads, weights=None, theta=None, max_seq_len=None, device=None, dtype=None):
         super().__init__()
         self.num_heads = num_heads
         self.d_head = d_model // num_heads
-        self.q_proj = nn.Parameter(q_proj, requires_grad = True)
-        self.k_proj = nn.Parameter(k_proj, requires_grad = True)
-        self.v_proj = nn.Parameter(v_proj, requires_grad = True)
-        self.w_o = nn.Parameter(w_o, requires_grad = True)
+
+        if weights is None:
+            self.q_proj = nn.Parameter(weights['q_proj.weight'], requires_grad = True)
+            self.k_proj = nn.Parameter(weights['v.weight'], requires_grad = True)
+            self.v_proj = nn.Parameter(weights['k_proj.weight'], requires_grad = True)
+            self.w_o = nn.Parameter(weights['output_proj.weight'], requires_grad = True)
+        else:   
+            self.q_proj = nn.Parameter(
+                            torch.empty(d_model, d_model, device=device, dtype=dtype),
+                            requires_grad=True
+                        )
+
+            self.k_proj = nn.Parameter(
+                            torch.empty(d_model, d_model, device=device, dtype=dtype),
+                            requires_grad=True
+                        )
+
+            self.v_proj = nn.Parameter(
+                            torch.empty(d_model, d_model, device=device, dtype=dtype),
+                            requires_grad=True
+                        )
+
+            self.w_o = nn.Parameter(
+                            torch.empty(d_model, d_model, device=device, dtype=dtype),
+                            requires_grad=True
+                        )
+
+            std = math.sqrt(2 / (d_model + d_model))
+            nn.init.trunc_normal_(
+                self.q_proj,
+                mean=0.0,
+                std=std,
+                a=-3*std,
+                b=3*std,
+            )
+            nn.init.trunc_normal_(
+                            self.k_proj,
+                            mean=0.0,
+                            std=std,
+                            a=-3*std,
+                            b=3*std,
+                        )
+            nn.init.trunc_normal_(
+                            self.v_proj,
+                            mean=0.0,
+                            std=std,
+                            a=-3*std,
+                            b=3*std,
+                        )
+
         self.theta = theta
         self.max_seq_len = max_seq_len
     
@@ -33,7 +79,7 @@ class MultiHeadSelfAttention(nn.Module):
 
         # # apply RoPe
         if self.theta is not None:
-            rope = RoPE(self.theta, self.d_head, self.max_seq_len)
+            rope = RoPE(self.theta, self.d_head, self.max_seq_len, device=x.device, dtype=x.dtype)
             Q = rope.forward(Q, token_positions)
             K = rope.forward(K, token_positions)
 

@@ -25,9 +25,6 @@ import math
 import numpy as np
 from utils import run_get_batch, run_get_lr_cosine_schedule, run_cross_entropy, run_gradient_clipping, run_save_checkpoint, run_load_checkpoint
 
-vocabs = 'placeholder'
-input_file = 'placeholder'
-# read file
 
 # ===========
 
@@ -45,9 +42,6 @@ rope_theta = 1
 betas = [0.9, 0.95]
 weight_decay = 1
 
-# how to connect optimizer params, to  language model weights
-
-
 
 iterations = 10
 
@@ -58,11 +52,16 @@ warmup_iters = iterations * 0.2
 cosine_cycle_iters = iterations * 0.9
 max_l2_norm = 1
 
-# build train data
-dataset = np.array([])
+# build train data from tokenizer
+merges_filepath = 'output/TinyStoriesV2-GPT4-train-heap-merges.json'
+vocab_filepath = 'output/TinyStoriesV2-GPT4-train-heap-vocab.json'
 
-lm = LanguageModel(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, weights)
+tokenizer = BpeTokenizer.from_files(vocab_filepath, merges_filepath, ['<|endoftext|>'])
+with open('data/TinyStoriesV2-GPT4-valid.txt', 'r', encoding='utf-8') as f:
+    text = f.read()
 
+dataset = tokenizer.encode(text) 
+lm = LanguageModel(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, device=device)
 optimizer = AdamW(lm.parameters(), betas, weight_decay, lr=1e-3, eps=1e-8)
 
 losses = []

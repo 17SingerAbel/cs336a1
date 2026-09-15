@@ -28,7 +28,8 @@ class Linear(nn.Module):
                             in_features,
                             device=device,
                             dtype=dtype,
-                        )
+                        ),
+                        requires_grad=True
                     )
     
             std = math.sqrt(2 / (in_features + out_features))

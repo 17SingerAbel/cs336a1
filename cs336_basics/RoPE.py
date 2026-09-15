@@ -4,15 +4,15 @@ from einops import einsum, rearrange
 
 
 class RoPE(nn.Module):
-    def __init__(self, theta, d_k: int, max_seq_len: int, device=None):
+    def __init__(self, theta, d_k: int, max_seq_len: int, device=None, dtype=None):
         super().__init__()
 
-        freq = 1.0 / (theta ** (torch.arange(0, d_k, 2, device=device) / d_k))
+        freq = 1.0 / (theta ** (torch.arange(0, d_k, 2, device=device, dtype=dtype) / d_k))
 
         # idx = torch.arange(start=1, end=k, step=1)
         # theta_k = 1  / theta ** ((2*idx - 2) / d_k)
         self.register_buffer("freq", freq)
-        positions = torch.arange(max_seq_len, device=device)
+        positions = torch.arange(max_seq_len, device=device, dtype=dtype)
 
         angles = einsum(positions, freq, 'row, column -> row column')
         self.register_buffer('cos_cached', torch.cos(angles))
@@ -29,7 +29,6 @@ class RoPE(nn.Module):
 
         x_even = x[..., 0::2]  #[..., seq, d_k/2]
         x_odd = x[..., 1::2]
-
 
         y_even = x_even * cos - x_odd * sin
         y_odd = x_even * sin + x_odd * cos

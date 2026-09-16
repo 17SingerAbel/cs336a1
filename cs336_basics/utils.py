@@ -20,7 +20,7 @@ from cs336_basics.MultiHeadSelfAttention import MultiHeadSelfAttention
 from cs336_basics.TransformerBlock import TransformerBlock
 from cs336_basics.LanguageModel import LanguageModel
 from cs336_basics.AdamW import AdamW
-from einops import einsum
+from einops import reduce, rearrange, einsum
 import math
 import numpy as np
 
@@ -44,7 +44,7 @@ def run_linear(
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
     linear = Linear(d_in, d_out)
-    linear.weight = nn.Parameter(weights, requires_grad=True)
+    linear.weight.data = weights
     return linear.forward(in_features)
 
 def run_embedding(
@@ -66,7 +66,7 @@ def run_embedding(
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
     embedding = Embedding(vocab_size, d_model)
-    embedding.embedding_matrix = nn.Parameter(weights, requires_grad=True)
+    embedding.weight.data = weights
     return embedding.forward(token_ids)
 
 
@@ -99,12 +99,18 @@ def run_swiglu(
     # You can also manually assign the weights
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
-    # swiglu.w3.weight.data = w3_weight]
-    swiglu = SwiGlu(d_model, d_ff)
-    swiglu.w1_weight = nn.Parameter(w1_weight, requires_grad=True)
-    swiglu.w2_weight = nn.Parameter(w2_weight, requires_grad=True)
-    swiglu.w3_weight = nn.Parameter(w3_weight, requires_grad=True)
+    # swiglu.w3.weight.data = w3_weight
 
+    
+    swiglu = SwiGlu(d_model, d_ff)
+    weights = {
+        "w1.weight": w1_weight,
+        "w2.weight": w2_weight,
+        "w3.weight": w3_weight,
+    }
+
+    swiglu.load_state_dict(weights)
+    
     return swiglu.forward(in_features)
 
 
@@ -165,7 +171,15 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_model"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    multihead = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight)
+
+    weights = {
+        "q_proj.weight": q_proj_weight,
+        "k_proj.weight": k_proj_weight,
+        "v_proj.weight": v_proj_weight,
+        "output_proj.weight": o_proj_weight,
+    }
+    multihead = MultiHeadSelfAttention(d_model, num_heads)
+    multihead.load_state_dict(weights)
     return multihead.forward(in_features)
 
 def run_multihead_self_attention_with_rope(
@@ -205,7 +219,15 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_model"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    multihead = MultiHeadSelfAttention(d_model, num_heads, q_proj_weight, k_proj_weight, v_proj_weight, o_proj_weight, theta=theta, max_seq_len=max_seq_len)
+
+    weights = {
+        "q_proj.weight": q_proj_weight,
+        "k_proj.weight": k_proj_weight,
+        "v_proj.weight": v_proj_weight,
+        "output_proj.weight": o_proj_weight,
+    }
+    multihead = MultiHeadSelfAttention(d_model, num_heads, theta=theta, max_seq_len=max_seq_len)
+    multihead.load_state_dict(weights)
     return multihead.forward(in_features, token_positions)
 
 
@@ -303,7 +325,8 @@ def run_transformer_block(
         running the Transformer block on the input features while using RoPE.
     """
     seq_len = in_features.shape[-2]
-    transformer_block = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta, weights)
+    transformer_block = TransformerBlock(d_model, num_heads, d_ff, max_seq_len, theta)
+    transformer_block.load_state_dict(weights)
     return transformer_block.forward(in_features, seq_len)
 
 
@@ -388,7 +411,8 @@ def run_transformer_lm(
         next-word distribution for each token.
     """
     seq_len = in_indices.shape[-1]
-    lm = LanguageModel(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, weights)
+    lm = LanguageModel(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta)
+    lm.load_state_dict(weights)
     return lm.forward(in_indices, seq_len)
 
 
@@ -412,7 +436,8 @@ def run_rmsnorm(
         Float[Tensor,"... d_model"]: Tensor of with the same shape as `in_features` with the output of running
         RMSNorm of the `in_features`.
     """
-    rmsNorm = RMSNorm(d_model=d_model, eps=eps, weights=weights)
+    rmsNorm = RMSNorm(d_model=d_model, eps=eps)
+    rmsNorm.weight.data = weights
     return rmsNorm.forward(in_features)
 
 

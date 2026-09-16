@@ -5,22 +5,21 @@ from einops import  einsum, reduce
 
 class RMSNorm(nn.Module):
 
-    def __init__(self, d_model: int, eps: float=1e-5, weights=None, device=None, dtype=None):
+    def __init__(self, d_model: int, eps: float=1e-5, device=None, dtype=None):
         super().__init__()
         self.d_model = d_model
         self.eps = eps
 
-        if weights is None:
-            self.weights = nn.Parameter(
-                torch.ones(
-                    d_model,
-                    device=device,
-                    dtype=dtype,
-                ),
-                requires_grad=True
-            )
-        else:
-            self.weights = nn.Parameter(weights, requires_grad=True)
+
+        self.weight = nn.Parameter(
+            torch.ones(
+                d_model,
+                device=device,
+                dtype=dtype,
+            ),
+            requires_grad=True
+        )
+
 
     def forward(self, x: Tensor) -> Tensor:
         in_dtype = x.dtype
@@ -35,7 +34,7 @@ class RMSNorm(nn.Module):
         rms_sum = reduce(x**2, "... d_model -> ... 1", "mean")  
         normalized_x = x /(rms_sum + self.eps) ** 0.5
 
-        result = einsum(normalized_x, self.weights, '... d, d -> ... d')
+        result = einsum(normalized_x, self.weight, '... d, d -> ... d')
 
 
         return result.to(in_dtype)

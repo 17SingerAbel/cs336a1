@@ -6,32 +6,30 @@ from einops import einsum
 
 class Embedding(nn.Module):
 
-    def __init__(self, num_embeddings,embedding_dim, weights=None, device=None, dtype=None):
+    def __init__(self, num_embeddings,embedding_dim, device=None, dtype=None):
         super().__init__()
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
         
-        if weights is not None:
-            self.embedding_matrix = nn.Parameter(weights, requires_grad=True)
-        else:
-            self.embedding_matrix = nn.Parameter(
-                        torch.empty(
-                            num_embeddings,
-                            embedding_dim,
-                            device=device,
-                            dtype=dtype,
-                        ), requires_grad=True
-                    )
 
-            std = 1
+        self.weight = nn.Parameter(
+                    torch.empty(
+                        num_embeddings,
+                        embedding_dim,
+                        device=device,
+                        dtype=dtype,
+                    ), requires_grad=True
+                )
 
-            nn.init.trunc_normal_(
-                self.embedding_matrix,
-                mean=0.0,
-                std=std,
-                a=-3 * std,
-                b=3 * std,
-            )
+        std = 1
+
+        nn.init.trunc_normal_(
+            self.weight,
+            mean=0.0,
+            std=std,
+            a=-3 * std,
+            b=3 * std,
+        )
 
     def forward(self, token_ids: torch.Tensor ) -> torch.Tensor:
-        return self.embedding_matrix[token_ids]
+        return self.weight[token_ids]

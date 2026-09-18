@@ -16,7 +16,6 @@ class AdamW(torch.optim.Optimizer):
 
 
     def step(self, closure: Optional[Callable] = None):
-        loss = None if closure is None else closure()
 
         for group in self.param_groups:
             lr = group["lr"]
@@ -49,14 +48,3 @@ class AdamW(torch.optim.Optimizer):
                 state['m'] = new_m
                 state['v'] = new_v
 
-# for lr in [1e1, 1e2, 1e3]:
-#     print("lr: ", lr)
-#     weights = nn.Parameter(5 * torch.randn((10, 10)))
-#     opt = Optimizer([weights], lr=lr)
-
-#     for t in range(10):
-#         opt.zero_grad()
-#         loss = (weights **2).mean()
-#         print(loss.cpu().item())
-#         loss.backward()
-#         opt.step()

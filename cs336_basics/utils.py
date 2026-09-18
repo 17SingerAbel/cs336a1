@@ -509,7 +509,7 @@ def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, "
 
 
 def run_cross_entropy(
-    inputs: Float[Tensor, " batch_size vocab_size"], targets: Int[Tensor, " batch_size"]
+    inputs: Float[Tensor, " batch_size seq_length vocab_size"], targets: Int[Tensor, " batch_size seq_length"]
 ) -> Float[Tensor, ""]:
     """Given a tensor of inputs and targets, compute the average cross-entropy
     loss across examples.
@@ -523,8 +523,11 @@ def run_cross_entropy(
     Returns:
         Float[Tensor, ""]: The average cross-entropy loss across examples.
     """
+    vocab_size = inputs.shape[-1]
+    inputs = inputs.reshape(-1, vocab_size)
+    targets = targets.reshape(-1)
     max_entity = torch.amax(inputs, dim=-1, keepdim=True)
-    batch_idx = torch.arange(inputs.shape[0])
+    batch_idx = torch.arange(inputs.shape[0], device=inputs.device)
     correct_logits = inputs[batch_idx, targets].unsqueeze(-1)
     loss = - correct_logits + max_entity + torch.log(torch.sum(torch.exp(inputs-max_entity), -1, keepdim=True))
     return loss.mean()

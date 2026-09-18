@@ -1,42 +1,26 @@
 from __future__ import annotations
 
-import os
-from collections.abc import Iterable
-from typing import IO, Any, BinaryIO
-
 import numpy.typing as npt
 import torch
-from jaxtyping import Bool, Float, Int
-from torch import Tensor
-from cs336_basics.bpe import train_bpe, train_bpe_heap
+
 from cs336_basics.bpe_tokenizer import BpeTokenizer
-from cs336_basics.Linear import Linear
-import torch.nn as nn
-from cs336_basics.Embedding import Embedding
-from cs336_basics.RMSNorm import RMSNorm
-from cs336_basics.SwiGLU import SwiGlu
-from cs336_basics.RoPE import RoPE
-from cs336_basics.MultiHeadSelfAttention import MultiHeadSelfAttention
-from cs336_basics.TransformerBlock import TransformerBlock
 from cs336_basics.LanguageModel import LanguageModel
 from cs336_basics.AdamW import AdamW
-from einops import reduce, rearrange, einsum
-import math
-import numpy as np
-from utils import run_get_batch, run_get_lr_cosine_schedule, run_cross_entropy, run_gradient_clipping, run_save_checkpoint, run_load_checkpoint
+from cs336_basics.utils import run_get_batch, run_get_lr_cosine_schedule, run_cross_entropy, run_gradient_clipping, run_save_checkpoint, run_load_checkpoint
 
 
 # ===========
 
 vocab_size = 10000
 context_length = 1024
-d_model = 1024
-num_layers = 10
-num_heads = 4
+d_model = 256
+num_layers = 4
+num_heads = 2
 d_ff = 2048
 
-batch_size=32
+batch_size=8
 device='cpu'
+dtype=torch.bfloat16
 
 rope_theta = 1
 betas = [0.9, 0.95]
@@ -56,22 +40,28 @@ max_l2_norm = 1
 merges_filepath = 'output/TinyStoriesV2-GPT4-train-heap-merges.json'
 vocab_filepath = 'output/TinyStoriesV2-GPT4-train-heap-vocab.json'
 
+print('loading bpe tokenizer')
 tokenizer = BpeTokenizer.from_files(vocab_filepath, merges_filepath, ['<|endoftext|>'])
-with open('data/TinyStoriesV2-GPT4-valid.txt', 'r', encoding='utf-8') as f:
+with open('data/smallest.txt', 'r', encoding='utf-8') as f:
     text = f.read()
 
+print('embedding text from tokenizer')
 dataset = tokenizer.encode(text) 
-lm = LanguageModel(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, device=device)
+
+lm = LanguageModel(vocab_size, context_length, d_model, num_layers, num_heads, d_ff, rope_theta, device=device, dtype=dtype)
 optimizer = AdamW(lm.parameters(), betas, weight_decay, lr=1e-3, eps=1e-8)
 
 losses = []
 # lm model
 for it in range(iterations):
+    print(f'========= itr {it} =========')
     optimizer.zero_grad()
 
     indices, labels = run_get_batch(dataset, batch_size, context_length, device=device)
     output = lm.forward(indices, context_length)
+    print(output.shape)
     loss = run_cross_entropy(output, labels)
+    print(loss)
     losses.append(loss)
     loss.backward()
 
@@ -79,8 +69,10 @@ for it in range(iterations):
     for group in optimizer.param_groups:
         group["lr"] = lr
 
-    run_gradient_clipping(lm.parameters, max_l2_norm)
+    run_gradient_clipping(lm.parameters(), max_l2_norm)
     optimizer.step()
     if it % 5 == 0:
         run_save_checkpoint(lm, optimizer, it, 'checkpoints/{it}_iteration')
 
+
+run_save_checkpoint(lm, optimizer, it, 'checkpoints/final')

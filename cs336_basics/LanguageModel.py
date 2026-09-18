@@ -22,7 +22,7 @@ class LanguageModel(nn.Module):
         self.lm_head = Linear(d_model, vocab_size, device=device, dtype=dtype)
 
     def forward(self, input_ids, seq_len):
-        x = self.token_embedding.forward(input_ids)
+        x = self.token_embeddings.forward(input_ids)
 
         for layer in self.layers:
             x = layer.forward(x, seq_len)

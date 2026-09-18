@@ -170,20 +170,20 @@ class BpeTokenizer:
         )
         return byte_text.decode("utf-8", errors="replace")
 
-merges_filepath = 'output/TinyStoriesV2-GPT4-valid-heap-merges.json'
-vocab_filepath = 'output/TinyStoriesV2-GPT4-valid-heap-vocab.json'
+# merges_filepath = 'output/TinyStoriesV2-GPT4-valid-heap-merges.json'
+# vocab_filepath = 'output/TinyStoriesV2-GPT4-valid-heap-vocab.json'
 
-tokenizer = BpeTokenizer.from_files(vocab_filepath, merges_filepath, ['<|endoftext|>'])
+# tokenizer = BpeTokenizer.from_files(vocab_filepath, merges_filepath, ['<|endoftext|>'])
 
-# print(tokenizer.encode('hello <|endoftext|> hel <|endoftext|> world'))
-# print(tokenizer.decode([5518, 32, 256, 430, 32, 256, 1592]))
+# # print(tokenizer.encode('hello <|endoftext|> hel <|endoftext|> world'))
+# # print(tokenizer.decode([5518, 32, 256, 430, 32, 256, 1592]))
 
-with open('data/owt_valid.txt', 'r', encoding='utf-8') as f:
-    text = f.read()
+# with open('data/owt_valid.txt', 'r', encoding='utf-8') as f:
+#     text = f.read()
 
-num_bytes = len(text.encode("utf-8"))
-token_count = sum(1 for _ in tokenizer.encode(text))
+# num_bytes = len(text.encode("utf-8"))
+# token_count = sum(1 for _ in tokenizer.encode(text))
 
-print("bytes count:", num_bytes)
-print("token amount:", token_count)
-print("bytes/token:", num_bytes / token_count)
+# print("bytes count:", num_bytes)
+# print("token amount:", token_count)
+# print("bytes/token:", num_bytes / token_count)

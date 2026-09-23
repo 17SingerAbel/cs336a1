@@ -482,12 +482,10 @@ def run_get_batch(
         size=batch_size
     )
 
-    batch_data = starts.reshape(-1, 1)
-    batch_data = batch_data + np.arange(context_length)
-
-    input_data = torch.LongTensor(batch_data)
-    label = input_data + 1
-
+    positions = starts.reshape(-1, 1) + np.arange(context_length)
+    
+    input_data = torch.LongTensor(dataset[positions])
+    label = dataset[positions+1]
     return input_data, label
 
 

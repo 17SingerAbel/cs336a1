@@ -122,6 +122,6 @@ while i < 100 and input_data[-1] not in end_ids:
     input_data = output_tokens
     i = i + 1
 
-
+  
 result = tokenizer.decode(output_tokens)
 print(result)

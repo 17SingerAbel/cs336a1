@@ -476,10 +476,10 @@ def run_get_batch(
         language modeling labels.
     """
     N = len(dataset)
-    starts = np.random.randint(
+    starts = torch.randint(
         0,
         N - context_length,
-        size=batch_size
+        (batch_size,)
     )
 
     positions = starts.reshape(-1, 1) + np.arange(context_length)

@@ -1,0 +1,27 @@
+model:
+  vocab_size: 10000
+  context_length: 256
+  d_model: 512
+  num_layers: 4
+  num_heads: 16
+  d_ff: 1344
+  rope_theta: 10000
+
+training:
+  batch_size: 32
+  iterations: 20000
+  dtype: bfloat16
+  device: cuda
+
+optimizer:
+  type: AdamW
+  betas: [0.9, 0.95]
+  weight_decay: 0.01
+  max_l2_norm: 1.0
+
+lr_schedule:
+  type: cosine
+  max_lr: 1.0e-1
+  min_lr: 1.0e-6
+  warmup_ratio: 0.02
+  cosine_cycle_ratio: 0.9

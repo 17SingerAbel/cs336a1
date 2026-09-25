@@ -1,9 +1,39 @@
 # TinyStories Language Model — Training Evaluation
 
-**Date:** 2026-09-23  
-**Training Run:** 75K Iterations
+## 2026-09-24 — Training Investigation
 
-## Overview
+Today I compared the 10K and 75K checkpoints to understand why the model showed almost no improvement after 10K iterations.
+
+### Findings
+
+- The 10K and 75K checkpoints produced nearly identical generations on five fixed prompts.
+- I initially suspected that the checkpoints were not being loaded correctly.
+- I compared model parameters between the two checkpoints and confirmed that the weights were different, although the mean absolute differences were very small (~1e-5 to 1e-4).
+- Validation loss also changed only slightly, from approximately 1.7315 at 10K to 1.7311 at 75K.
+- I then inspected the learning-rate schedule and found the likely cause.
+
+The LR schedule was originally configured for a 10K-iteration training run:
+
+- `max_lr = 1e-2`
+- `min_lr = 1e-5`
+- `warmup_iters = 2K`
+- `cosine_cycle_iters = 9K`
+
+However, I later extended training to 75K iterations without updating the LR schedule.
+
+As a result, the learning rate had already reached `1e-5` by approximately 10K iterations and remained at `1e-5` for the rest of the training run.
+
+### Conclusion
+
+The model effectively spent most of the 75K training run at the minimum learning rate. This likely explains why the parameters changed very little, validation loss plateaued, and the 10K and 75K checkpoints generated nearly identical outputs.
+
+For the next training run, the LR schedule should be configured based on the actual training horizon rather than extending a schedule designed for a much shorter run.
+
+##
+## 2026-09-23 — Training Run: 75K Iterations
+
+
+### Overview
 
 Trained a decoder-only language model from scratch on the TinyStories dataset for **75,000 iterations**, saving checkpoints every **5,000 iterations**.
 
@@ -11,7 +41,7 @@ During training, I initially monitored only the training loss. After completing 
 
 ---
 
-## Experiment Configuration
+### Experiment Configuration
 
 ```yaml
 experiment:
@@ -83,15 +113,15 @@ logging:
 
 ---
 
-## Training Loss
+### Training Loss
 
-![Training Loss](images/log_train_loss_750k_itr.png)
+![Training Loss](exp1/images/log_train_loss_750k_itr.png)
 
 The training loss decreased rapidly during the early stage of training and largely plateaued after approximately **10K iterations**.
 
 ---
 
-## Validation Evaluation
+### Validation Evaluation
 
 Each checkpoint was evaluated using the **same 100 validation batches** to ensure a fair comparison across training iterations.
 
@@ -101,9 +131,9 @@ Each checkpoint was evaluated using the **same 100 validation batches** to ensur
 | Validation CE Loss | ~1.7315 | ~1.7311 |
 | Train–Validation Gap | ~0.0155 | ~0.0156 |
 
-## Training vs. Validation Loss
+### Training vs. Validation Loss
 
-![Training and Validation Loss](images/log_train_valid_loss.png)
+![Training and Validation Loss](exp1/images/log_train_valid_loss.png)
 
 Both training and validation loss remained nearly flat after approximately **10K iterations**.
 
@@ -113,7 +143,7 @@ Instead, the results suggest that the model had largely reached a **training pla
 
 ---
 
-## Key Observations
+### Key Observations
 
 1. The model learned most rapidly during the early stage of training.
 2. Both training and validation loss plateaued after approximately 10K iterations.
@@ -123,7 +153,7 @@ Instead, the results suggest that the model had largely reached a **training pla
 
 ---
 
-## Next Step
+### Next Step
 
 Compare generation quality between the **10K and 75K checkpoints** using:
 
